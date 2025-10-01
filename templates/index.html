@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Home • Run.AI Coach</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #300148, #5b0086);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      padding: 24px;
+    }
+    .card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      backdrop-filter: blur(6px);
+      color: #fff;
+    }
+    .btn-light {
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+    }
+    .btn-light:hover {
+      background: rgba(255,255,255,0.25);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 720px;">
+    <div class="card p-4">
+      <h2 class="mb-2">Welcome, {{ user }} 👋</h2>
+      <p class="mb-4">Meet your Run.AI Coach for quick running tips, race prep, and motivation.</p>
+
+      <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-light btn-lg" href="/chat">Talk to Run.AI Coach</a>
+        <a class="btn btn-outline-light btn-lg" href="/logout">Log out</a>
+      </div>
+
+      <hr class="my-4" />
+
+      <div class="row g-3 align-items-center">
+        <div class="col-12 col-md-7">
+          <h5 class="mb-2">Two Modes</h5>
+          <ul class="mb-0">
+            <li><strong>Voice Mode:</strong> Hands-free conversation. Speak and get spoken replies.</li>
+            <li><strong>Chat Mode:</strong> Type messages and get concise answers.</li>
+          </ul>
+        </div>
+        <div class="col-12 col-md-5">
+          <img src="/static/img/robot.svg" alt="Run.AI Coach" class="img-fluid" />
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

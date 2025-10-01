@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Mode</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  >
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%; overflow: hidden;
+      background: linear-gradient(135deg, #300148, #5b0086);
+      color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .center-container {
+      height: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+    }
+    .status-text {
+      font-size: 2rem; font-weight: 600; color: #f0d8ff;
+      margin-bottom: 12px; animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+    .mic-btn {
+      font-size: 2rem; background: none; border: 2px solid white; color: white;
+      border-radius: 50%; width: 80px; height: 80px; display: flex;
+      align-items: center; justify-content: center; transition: background 0.3s ease;
+    }
+    .mic-btn:hover { background: rgba(255, 255, 255, 0.1); }
+    .facecam {
+      position: absolute; bottom: 20px; right: 20px;
+      width: 160px; height: 120px; border-radius: 10px; border: 2px solid white; overflow: hidden;
+    }
+    .transcript-box {
+      position: absolute; top: 60px; left: 20px; width: 350px;
+      background: rgba(255, 255, 255, 0.08); padding: 1rem; border-radius: 10px;
+      font-size: 1rem; text-align: left; overflow: hidden; max-height: 120px;
+      transition: max-height 0.4s ease;
+    }
+    .transcript-box.expanded { max-height: 80vh; overflow-y: auto; }
+    .transcript-box p { margin-bottom: 10px; }
+    .transcript-user { color: #ffebc6; }
+    .transcript-assistant { color: #c3eaff; }
+    .toggle-btn {
+      position: absolute; top: 20px; left: 20px; z-index: 100;
+      background-color: rgba(255, 255, 255, 0.15); border: none; padding: 8px 12px;
+      color: white; border-radius: 6px; font-size: 0.9rem; cursor: pointer;
+    }
+    .toggle-btn:hover { background-color: rgba(255, 255, 255, 0.25); }
+    .back-btn { position: absolute; bottom: 20px; left: 20px; }
+    .mode-toggle {
+      position: absolute; top: 20px; right: 20px; z-index: 100; display: flex; gap: 8px;
+    }
+    .mode-toggle .btn { border: 1px solid rgba(255,255,255,0.4); color: #fff; }
+    .mode-toggle .btn.active { background: rgba(255,255,255,0.22); }
+    .robot {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      opacity: 0.15; width: 240px; pointer-events: none;
+    }
+    .chat-input {
+      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+      width: min(720px, 90%); display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <button class="toggle-btn" onclick="toggleTranscript()">📜 Expand/Collapse Chat</button>
+
+  <div class="mode-toggle">
+    <button id="voiceModeBtn" class="btn btn-sm active" onclick="setMode('voice')">Voice Mode</button>
+    <button id="chatModeBtn" class="btn btn-sm" onclick="setMode('chat')">Chat Mode</button>
+  </div>
+
+  <div class="center-container">
+    <div class="status-text" id="status-text">I'm listening</div>
+    <button id="micBtn" class="mic-btn" onclick="startRecognition()">🎤</button>
+  </div>
+
+  <!-- Facecam (client-side webcam, more reliable than server MJPEG) -->
+  <div class="facecam">
+    <video id="facecam" autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>
+  </div>
+
+  <img class="robot" src="/static/img/robot.svg" alt="Run.AI Coach" />
+
+  <div class="transcript-box" id="transcript-box"></div>
+
+  <a href="/home" class="btn btn-outline-light back-btn">← Back to Home</a>
+
+  <!-- Chat input (visible in Chat Mode) -->
+  <div class="chat-input input-group">
+    <input id="textInput" type="text" class="form-control" placeholder="Type your message..." />
+    <button class="btn btn-light" onclick="sendTyped()">Send</button>
+  </div>
+
+  <script>
+    let messages = [];
+    let mode = 'voice'; // 'voice' or 'chat'
+    let recognition = null;
+
+    // Webcam
+    (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        const video = document.getElementById('facecam');
+        video.srcObject = stream;
+      } catch (err) {
+        console.warn('Webcam error:', err);
+      }
+    })();
+
+    function setMode(newMode) {
+      mode = newMode;
+      const voiceBtn = document.getElementById('voiceModeBtn');
+      const chatBtn = document.getElementById('chatModeBtn');
+      const micBtn = document.getElementById('micBtn');
+      const inputWrap = document.querySelector('.chat-input');
+      const status = document.getElementById('status-text');
+
+      voiceBtn.classList.toggle('active', mode === 'voice');
+      chatBtn.classList.toggle('active', mode === 'chat');
+
+      if (mode === 'voice') {
+        micBtn.style.display = 'inline-flex';
+        inputWrap.style.display = 'none';
+        status.innerText = "I'm listening";
+      } else {
+        micBtn.style.display = 'none';
+        inputWrap.style.display = 'flex';
+        status.innerText = "Chat Mode";
+      }
+    }
+
+    function toggleTranscript() {
+      const box = document.getElementById("transcript-box");
+      box.classList.toggle("expanded");
+    }
+
+    function appendMessage(role, text) {
+      const transcriptBox = document.getElementById("transcript-box");
+      const msg = document.createElement("p");
+      msg.className = role === "user" ? "transcript-user" : "transcript-assistant";
+      msg.innerHTML = `<strong>${role === "user" ? "You" : "Assistant"}:</strong> ${text}`;
+      transcriptBox.appendChild(msg);
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    }
+
+    // Voice Mode
+    function startRecognition() {
+      if (mode !== 'voice') return;
+
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        alert("SpeechRecognition not supported in this browser.");
+        return;
+      }
+
+      recognition = new SR();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.start();
+      document.getElementById("status-text").innerText = "Listening...";
+
+      recognition.onresult = function(event) {
+        const userText = event.results[0][0].transcript;
+        messages.push({ role: "user", content: userText });
+        appendMessage("user", userText);
+        document.getElementById("status-text").innerText = "Thinking...";
+        sendToServer(userText);
+      };
+
+      recognition.onerror = function(event) {
+        alert('Speech recognition error: ' + event.error);
+        document.getElementById("status-text").innerText = "I'm listening";
+      };
+    }
+
+    // Chat Mode
+    function sendTyped() {
+      const input = document.getElementById('textInput');
+      const val = input.value.trim();
+      if (!val) return;
+      input.value = '';
+      messages.push({ role: "user", content: val });
+      appendMessage("user", val);
+      document.getElementById("status-text").innerText = "Thinking...";
+      sendToServer(val);
+    }
+
+    // Common server call
+    function sendToServer(message) {
+      fetch("/chat_api", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message, messages: messages })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.reply) {
+          messages = data.messages;
+          appendMessage("assistant", data.reply);
+          if (mode === 'voice') { speak(data.reply); }
+          document.getElementById("status-text").innerText = (mode === 'voice') ? "I'm listening" : "Chat Mode";
+        } else {
+          document.getElementById("status-text").innerText = "Error. Try again";
+          console.error('Error:', data.error);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById("status-text").innerText = "Network error";
+      });
+    }
+
+    function speak(text) {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 1.0;
+      speechSynthesis.speak(utterance);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login • Run.AI Coach</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #300148, #5b0086);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #fff;
+      border-radius: 14px;
+      backdrop-filter: blur(6px);
+    }
+    .btn-primary {
+      background: #8a2be2;
+      border: none;
+    }
+    .btn-primary:hover {
+      background: #9b3aed;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 420px;">
+    <div class="card p-4">
+      <h3 class="mb-3 text-center">Run.AI Coach</h3>
+      <p class="text-center mb-4">Log in to start chatting with your running coach.</p>
+      <form method="POST" action="/">
+        <div class="mb-3">
+          <label class="form-label">Name</label>
+          <input name="username" class="form-control" placeholder="e.g., Joshua" required />
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Log In</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
